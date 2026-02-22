@@ -1,5 +1,5 @@
 from flask import jsonify, request, g
-from app.core.secuirity import token_required
+from app.core.security import token_required
 from app.models import Post, Like
 from app.extensions import db
 from . import api_v1_bp

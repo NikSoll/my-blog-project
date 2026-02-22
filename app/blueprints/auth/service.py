@@ -9,12 +9,14 @@ from flask import current_app
 class AuthService:
 
     @staticmethod
-    def register(email, password):
+    def register(email, username, password):
         if User.query.filter_by(email=email).first():
             return None, "Пользователь с таким email уже существует"
 
-        user = User(email=email)
-        user.set_password(password)
+        if User.query.filter_by(username=username).first():
+            return None, "Пользователь с таким именем уже существует"
+
+        user = User(email=email, username=username, password=password)
 
         try:
             db.session.add(user)

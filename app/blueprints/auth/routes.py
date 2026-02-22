@@ -2,7 +2,7 @@ from flask import request, jsonify, g
 from . import auth_bp
 from .shemas import UserRegisterSchema, UserLoginSchema, UserResponseSchema, TokenResponseSchema
 from .service import AuthService
-from app.core.secuirity import token_required
+from app.core.decorators import token_required
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -18,7 +18,7 @@ def register():
         except Exception as e:
             return jsonify({'error': str(e)}), 400
 
-        user, error = AuthService.register(validated.email, validated.password)
+        user, error = AuthService.register(validated.email, validated.username, validated.password)
 
         if error:
             return jsonify({'error': error}), 400
@@ -32,6 +32,7 @@ def register():
                 user=UserResponseSchema(
                     id=user.id,
                     email=user.email,
+                    username=user.username,
                     role=user.role
                 ).dict()
             ).dict()
@@ -67,6 +68,7 @@ def login():
                 user=UserResponseSchema(
                     id=user.id,
                     email=user.email,
+                    username=user.username,
                     role=user.role
                 ).dict()
             ).dict()
@@ -81,13 +83,18 @@ def login():
 def get_current_user():
     try:
         user = g.current_user
+        if not user:
+            return jsonify({'error': 'Пользователь не найден'}), 404
+
         return jsonify({
             'success': True,
-            'data': UserResponseSchema(
-                id=user.id,
-                email=user.email,
-                role=user.role
-            ).dict()
+            'data': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'role': user.role
+            }
         }), 200
     except Exception as e:
+        print(f"Error in /me: {e}")
         return jsonify({'error': str(e)}), 500

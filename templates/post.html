@@ -9,7 +9,7 @@
         <div class="post-meta">
             <span>👤 Автор: {{ post.author.username if post.author else 'Неизвестно' }}</span>
             <span>📅 Дата: {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
-            <span>❤️ Лайков: <span class="likes-count">{{ post.likes_count|default(0) }}</span></span>
+            <span>❤️ Лайков: <span class="likes-count">{{ post.likes_count }}</span></span>
         </div>
         
         <div class="post-content">

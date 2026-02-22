@@ -1,18 +1,11 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
 class UserRegisterSchema(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=6)
-
-    @validator('password')
-    def validate_password(cls, v):
-        if len(v) < 6:
-            raise ValueError('Пароль должен быть минимум 6 символов')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Пароль должен содержать хотя бы одну цифру')
-        return v
+    username: str
+    password: str
 
 
 class UserLoginSchema(BaseModel):
@@ -23,6 +16,7 @@ class UserLoginSchema(BaseModel):
 class UserResponseSchema(BaseModel):
     id: int
     email: str
+    username: str
     role: str
 
 

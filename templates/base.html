@@ -10,43 +10,145 @@
         <nav>
             <div class="nav-links">
                 <a href="/" class="button">Главная</a>
-                {% if g.current_user %}
+                <span id="create-post-link" style="display: none;">
                     <a href="/create" class="button">Создать пост</a>
-                {% endif %}
+                </span>
             </div>
             <div class="nav-links">
                 <button id="theme-toggle">🌙 Тёмная тема</button>
-                {% if g.current_user %}
-                    <span>{{ g.current_user.username }}</span>
+                <span id="user-info" style="display: none;">
+                    <span id="username"></span>
                     <a href="/logout" class="button">Выйти</a>
-                {% else %}
+                </span>
+                <span id="login-buttons">
                     <button onclick="realLogin()">Вход</button>
                     <button onclick="realRegister()">Регистрация</button>
-                {% endif %}
+                </span>
             </div>
         </nav>
 
         {% block content %}{% endblock %}
     </div>
 
-    <script src="/static/js/user.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark');
-                themeToggle.textContent = 'Светлая тема';
-            }
-
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark');
-                const isDark = document.body.classList.contains('dark');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                themeToggle.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
-            });
+    <!--<script src="/static/js/user.js"></script> -->
+<script>
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            themeToggle.textContent = 'Светлая тема';
         }
-    </script>
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
+        });
+    }
+
+    function updateUI() {
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+        const createPostLink = document.getElementById('create-post-link');
+        const userInfo = document.getElementById('user-info');
+        const loginButtons = document.getElementById('login-buttons');
+        const usernameSpan = document.getElementById('username');
+
+        if (token && userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                createPostLink.style.display = 'inline';
+                userInfo.style.display = 'inline';
+                usernameSpan.textContent = user.username || user.email;
+                loginButtons.style.display = 'none';
+
+                console.log('Токен есть, пользователь авторизован');
+            } catch (e) {
+                console.error('Ошибка парсинга пользователя:', e);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                createPostLink.style.display = 'none';
+                userInfo.style.display = 'none';
+                loginButtons.style.display = 'inline';
+            }
+        } else {
+            console.log('Токена нет, пользователь не авторизован');
+            createPostLink.style.display = 'none';
+            userInfo.style.display = 'none';
+            loginButtons.style.display = 'inline';
+        }
+    }
+
+    updateUI();
+
+    window.realLogin = async function() {
+        let email = prompt('Email:');
+        let password = prompt('Пароль:');
+        if (!email.includes('@') || !email.includes('.')) {
+            alert('Некорректный email');
+            return;
+        }
+        if (password.length < 6) {
+            alert('Пароль должен быть минимум 6 символов');
+            return;
+        }
+        try {
+            let response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
+            });
+            let data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('token', data.data.token);
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+                alert('Вход выполнен!');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + (data.error));
+            }
+        } catch (error) {
+            alert('Упс...');
+        }
+    };
+
+    window.realRegister = async function() {
+        let email = prompt('Email:');
+        let username = prompt('Имя пользователя:');
+        let password = prompt('Пароль:');
+        if (!email.includes('@') || !email.includes('.')) {
+            alert('Некорректный email');
+            return;
+        }
+        if (username.length < 3) {
+            alert('Имя должно быть минимум 3 символа');
+            return;
+        }
+        if (password.length < 6) {
+            alert('Пароль должен быть минимум 6 символов');
+            return;
+        }
+        try {
+            let response = await fetch('/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, username, password})
+            });
+            let data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('token', data.data.token);
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+                alert('Регистрация успешна!');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + (data.error));
+            }
+        } catch (error) {
+            alert('Упс...');
+        }
+    };
+</script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,7 +1,6 @@
 from app.extensions import db
 from datetime import datetime
 
-
 class Post(db.Model):
     __tablename__ = 'posts'
 
@@ -11,6 +10,7 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     def __repr__(self):
         return f'<Post {self.title}>'

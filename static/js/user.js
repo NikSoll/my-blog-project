@@ -1,6 +1,4 @@
-//валид емаила
 function validateEmail(email) {
-    //@ и .
     if (!email.includes('@') || !email.includes('.')) {
         alert('Некорректный email. Должен содержать @ и .');
         return false;
@@ -8,7 +6,6 @@ function validateEmail(email) {
     return true;
 }
 
-//валид пароля
 function validatePassword(password) {
     if (password.length < 6) {
         alert('Пароль должен быть минимум 6 символов');
@@ -17,7 +14,6 @@ function validatePassword(password) {
     return true;
 }
 
-//валид на имя
 function validateUsername(username) {
     if (username.length < 3) {
         alert('Имя должно быть минимум 3 символа');
@@ -26,7 +22,6 @@ function validateUsername(username) {
     return true;
 }
 
-//рег
 async function realRegister() {
     let email = prompt('Email:');
     let username = prompt('Имя пользователя:');
@@ -37,15 +32,12 @@ async function realRegister() {
     if (!validatePassword(password)) return;
 
     try {
-        // Отправляем на сервер
-        let response = await fetch('', {
+        let response = await fetch('/auth/register', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, username, password})
         });
-
         let data = await response.json();
-
         if (response.ok) {
             localStorage.setItem('token', data.data.token);
             localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -55,12 +47,10 @@ async function realRegister() {
             alert('Ошибка: ' + (data.error));
         }
     } catch (error) {
-        alert('Upsss...');
+        alert('Упс...');
     }
 }
 
-
-//вход
 async function realLogin() {
     let email = prompt('Email:');
     let password = prompt('Пароль:');
@@ -69,14 +59,12 @@ async function realLogin() {
     if (!validatePassword(password)) return;
 
     try {
-        let response = await fetch('', {
+        let response = await fetch('/auth/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password})
         });
-
         let data = await response.json();
-
         if (response.ok) {
             localStorage.setItem('token', data.data.token);
             localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -86,21 +74,6 @@ async function realLogin() {
             alert('Ошибка: ' + (data.error));
         }
     } catch (error) {
-        alert('Upsss...');
+        alert('Упс...');
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,14 +4,14 @@
 
 {% block content %}
     <h1>Все посты</h1>
-    
+
     <input type="text" id="search" class="search-box" placeholder="Поиск по постам...">
-    
+
     <div class="sort-controls">
-        <button id="sort-by-likes">❤️ Сортировать по лайкам</button>
-        <button id="sort-by-date">📅 Сортировать по дате</button>
+        <button id="sort-by-likes">❤️ По лайкам</button>
+        <button id="sort-by-date">📅 По дате</button>
     </div>
-    
+
     {% if posts %}
         <ul class="posts-list" id="posts-list">
             {% for post in posts %}
@@ -40,7 +40,7 @@
     <div class="modal" id="delete-modal">
         <div class="modal-content">
             <h3>Подтверждение удаления</h3>
-            <p>Вы уверены, что хотите удалить этот пост?</p>
+            <p>Вы уверены?</p>
             <div class="modal-actions">
                 <button id="confirm-delete" class="danger">Удалить</button>
                 <button id="cancel-delete">Отмена</button>
@@ -56,7 +56,6 @@
         posts.forEach((post, index) => {
             post.style.opacity = '0';
             post.style.transform = 'translateY(-20px)';
-            
             setTimeout(() => {
                 post.style.opacity = '1';
                 post.style.transform = 'translateY(0)';
@@ -67,18 +66,11 @@
     const searchInput = document.getElementById('search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            const posts = document.querySelectorAll('.post');
-            
-            posts.forEach(post => {
+            const term = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.post').forEach(post => {
                 const title = post.querySelector('h3').textContent.toLowerCase();
                 const content = post.querySelector('p').textContent.toLowerCase();
-                
-                if (title.includes(searchTerm) || content.includes(searchTerm)) {
-                    post.style.display = 'block';
-                } else {
-                    post.style.display = 'none';
-                }
+                post.style.display = (title.includes(term) || content.includes(term)) ? 'block' : 'none';
             });
         });
     }
@@ -87,114 +79,76 @@
     const confirmDelete = document.getElementById('confirm-delete');
     const cancelDelete = document.getElementById('cancel-delete');
     let postIdToDelete = null;
-    
+
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.preventDefault();
             postIdToDelete = e.target.dataset.id;
             deleteModal.classList.add('active');
         });
     });
-    
-    if (confirmDelete) {
-        confirmDelete.addEventListener('click', async () => {
-            if (postIdToDelete) {
-                try {
-                    const response = await fetch(`/api/v1/post/${postIdToDelete}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const post = document.querySelector(`.post[data-id="${postIdToDelete}"]`);
-                        if (post) {
-                            post.classList.add('fade-out');
-                            setTimeout(() => {
-                                post.remove();
-                                if (document.querySelectorAll('.post').length === 0) {
-                                    location.reload();
-                                }
-                            }, 300);
-                        }
-                    } else {
-                        alert('Ошибка при удалении');
-                    }
-                } catch (error) {
-                    alert('Произошла ошибка');
-                } finally {
-                    deleteModal.classList.remove('active');
-                    postIdToDelete = null;
-                }
-            }
-        });
-    }
-    
-    if (cancelDelete) {
-        cancelDelete.addEventListener('click', () => {
+
+    confirmDelete?.addEventListener('click', async () => {
+        if (!postIdToDelete) return;
+        try {
+            const response = await fetch(`/api/v1/post/${postIdToDelete}`, {
+                method: 'DELETE',
+                headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+            });
+            if (response.ok) location.reload();
+            else alert('Ошибка при удалении');
+        } catch (error) {
+            alert('Произошла ошибка');
+        } finally {
             deleteModal.classList.remove('active');
             postIdToDelete = null;
-        });
-    }
+        }
+    });
+
+    cancelDelete?.addEventListener('click', () => {
+        deleteModal.classList.remove('active');
+        postIdToDelete = null;
+    });
 
     const sortByLikes = document.getElementById('sort-by-likes');
     const sortByDate = document.getElementById('sort-by-date');
     const postsList = document.getElementById('posts-list');
-    
+
     if (sortByLikes) {
         sortByLikes.addEventListener('click', () => {
             const posts = Array.from(document.querySelectorAll('.post'));
-            
-            posts.sort((a, b) => {
-                const likesA = parseInt(a.dataset.likes) || 0;
-                const likesB = parseInt(b.dataset.likes) || 0;
-                return likesB - likesA;
-            });
-            
-            posts.forEach(post => postsList.appendChild(post));
+            posts.sort((a, b) => (parseInt(b.dataset.likes) || 0) - (parseInt(a.dataset.likes) || 0));
+            posts.forEach(p => postsList.appendChild(p));
         });
     }
-    
+
     if (sortByDate) {
         sortByDate.addEventListener('click', () => {
             const posts = Array.from(document.querySelectorAll('.post'));
-            
-            posts.sort((a, b) => {
-                const dateA = new Date(a.dataset.date);
-                const dateB = new Date(b.dataset.date);
-                return dateB - dateA;
-            });
-            
-            posts.forEach(post => postsList.appendChild(post));
+            posts.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
+            posts.forEach(p => postsList.appendChild(p));
         });
     }
 
     document.querySelectorAll('.like-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            e.preventDefault();
             const postId = e.target.dataset.id;
-            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Нужно войти в систему');
+                return;
+            }
             try {
                 const response = await fetch(`/api/v1/like/${postId}`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
+                    headers: {'Authorization': `Bearer ${token}`}
                 });
-                
                 if (response.ok) {
                     const data = await response.json();
                     const post = e.target.closest('.post');
-                    const likesSpan = post.querySelector('.likes-count');
-                    likesSpan.textContent = data.likes;
+                    post.querySelector('.likes-count').textContent = data.likes;
                     post.dataset.likes = data.likes;
-                } else {
-                    alert('Нужно войти в систему');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-            }
+            } catch (error) {}
         });
     });
 </script>

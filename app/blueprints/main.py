@@ -1,8 +1,5 @@
-from flask import Blueprint, render_template, g, redirect, url_for
-from app.models.user import User
+from flask import Blueprint, render_template, g, redirect
 from app.models.post import Post
-
-
 
 main_bp = Blueprint('main', __name__)
 
@@ -11,24 +8,13 @@ def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
     return render_template('index.html', posts=posts)
 
-@main_bp.route('/post/<int:id>')
-def view_post(id):
-    post = Post.query.get_or_404(id)
-    return render_template('post.html', post=post)
-
 @main_bp.route('/create')
 def create_post_form():
-    if not g.get('current_user'):
-        return redirect('/')
     return render_template('create_post.html')
 
 @main_bp.route('/edit/<int:id>')
 def edit_post_form(id):
-    if not g.get('current_user'):
-        return redirect('/')
     post = Post.query.get_or_404(id)
-    if g.current_user.id != post.user_id and not g.current_user.is_admin():
-        return redirect('/')
     return render_template('edit_post.html', post=post)
 
 @main_bp.route('/logout')
