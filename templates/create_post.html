@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Создать пост{% endblock %}
+
+{% block content %}
+    <h1>Создать новый пост</h1>
+    
+    <form id="post-form">
+        <div class="form-group">
+            <label for="title">Заголовок</label>
+            <input type="text" id="title" name="title" required maxlength="200">
+        </div>
+        
+        <div class="form-group">
+            <label for="body">Текст поста (макс. 300 символов)</label>
+            <textarea id="body" name="body" rows="10" required></textarea>
+            <div class="char-counter" id="char-counter">0/300</div>
+        </div>
+        
+        <button type="submit" id="submit-btn">Создать</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const bodyTextarea = document.getElementById('body');
+    const charCounter = document.getElementById('char-counter');
+    const submitBtn = document.getElementById('submit-btn');
+    const maxLength = 300;
+    
+    if (bodyTextarea) {
+        bodyTextarea.addEventListener('input', (e) => {
+            const length = e.target.value.length;
+            charCounter.textContent = `${length}/${maxLength}`;
+            
+            if (length > maxLength) {
+                e.target.classList.add('invalid');
+                charCounter.classList.add('invalid');
+                submitBtn.disabled = true;
+            } else {
+                e.target.classList.remove('invalid');
+                charCounter.classList.remove('invalid');
+                submitBtn.disabled = false;
+            }
+        });
+
+        bodyTextarea.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedText = e.clipboardData.getData('text');
+            const currentLength = bodyTextarea.value.length;
+            const availableSpace = maxLength - currentLength;
+            
+            if (availableSpace > 0) {
+                const textToAdd = pastedText.slice(0, availableSpace);
+                bodyTextarea.value += textToAdd;
+                bodyTextarea.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
+    document.getElementById('post-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('title').value.trim();
+        const body = document.getElementById('body').value.trim();
+        
+        if (!title || !body) {
+            alert('Заполните все поля');
+            return;
+        }
+        
+        if (body.length > maxLength) {
+            alert('Текст поста слишком длинный! Максимум 300 символов.');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/v1/post', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ title, body })
+            });
+            
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                const data = await response.json();
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при создании поста');
+        }
+    });
+</script>
+{% endblock %}

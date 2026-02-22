@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать пост{% endblock %}
+
+{% block content %}
+    <h1>Редактировать пост</h1>
+    
+    <form id="edit-form">
+        <div class="form-group">
+            <label for="title">Заголовок</label>
+            <input type="text" id="title" name="title" value="{{ post.title }}" required maxlength="200">
+        </div>
+        
+        <div class="form-group">
+            <label for="body">Текст поста (макс. 300 символов)</label>
+            <textarea id="body" name="body" rows="10" required>{{ post.body }}</textarea>
+            <div class="char-counter" id="char-counter">{{ post.body|length }}/300</div>
+        </div>
+        
+        <button type="submit" id="submit-btn">Сохранить</button>
+        <a href="/" class="button">Отмена</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const bodyTextarea = document.getElementById('body');
+    const charCounter = document.getElementById('char-counter');
+    const submitBtn = document.getElementById('submit-btn');
+    const maxLength = 300;
+    
+    if (bodyTextarea) {
+        bodyTextarea.addEventListener('input', (e) => {
+            const length = e.target.value.length;
+            charCounter.textContent = `${length}/${maxLength}`;
+            
+            if (length > maxLength) {
+                e.target.classList.add('invalid');
+                charCounter.classList.add('invalid');
+                submitBtn.disabled = true;
+            } else {
+                e.target.classList.remove('invalid');
+                charCounter.classList.remove('invalid');
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    document.getElementById('edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('title').value.trim();
+        const body = document.getElementById('body').value.trim();
+        const postId = {{ post.id }};
+        
+        if (!title || !body) {
+            alert('Заполните все поля');
+            return;
+        }
+        
+        if (body.length > maxLength) {
+            alert('Текст поста слишком длинный! Максимум 300 символов.');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/v1/post/${postId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ title, body })
+            });
+            
+            if (response.ok) {
+                window.location.href = `/post/${postId}`;
+            } else {
+                const data = await response.json();
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при редактировании поста');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Мой блог{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="nav-links">
+                <a href="/" class="button">Главная</a>
+                {% if g.current_user %}
+                    <a href="/create" class="button">Создать пост</a>
+                {% endif %}
+            </div>
+            <div class="nav-links">
+                <button id="theme-toggle">🌙 Тёмная тема</button>
+                {% if g.current_user %}
+                    <span>{{ g.current_user.username }}</span>
+                    <a href="/logout" class="button">Выйти</a>
+                {% else %}
+                    <button onclick="realLogin()">Вход</button>
+                    <button onclick="realRegister()">Регистрация</button>
+                {% endif %}
+            </div>
+        </nav>
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="/static/js/user.js"></script>
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                themeToggle.textContent = 'Светлая тема';
+            }
+
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                const isDark = document.body.classList.contains('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                themeToggle.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

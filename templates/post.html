@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - Мой блог{% endblock %}
+
+{% block content %}
+    <article class="post-full">
+        <h1>{{ post.title }}</h1>
+        
+        <div class="post-meta">
+            <span>👤 Автор: {{ post.author.username if post.author else 'Неизвестно' }}</span>
+            <span>📅 Дата: {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            <span>❤️ Лайков: <span class="likes-count">{{ post.likes_count|default(0) }}</span></span>
+        </div>
+        
+        <div class="post-content">
+            {{ post.body | replace('\n', '<br>') | safe }}
+        </div>
+        
+        <div class="post-actions">
+            <button class="like-btn" data-id="{{ post.id }}">❤️ Лайк</button>
+            
+            {% if g.current_user and (g.current_user.id == post.user_id or g.current_user.is_admin()) %}
+                <a href="/edit/{{ post.id }}" class="button">✏️ Редактировать</a>
+                <button class="danger delete-btn" data-id="{{ post.id }}">🗑️ Удалить</button>
+            {% endif %}
+            
+            <a href="/" class="button">← Назад</a>
+        </div>
+    </article>
+
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <h3>Подтверждение удаления</h3>
+            <p>Вы уверены, что хотите удалить пост "{{ post.title }}"?</p>
+            <div class="modal-actions">
+                <button id="confirm-delete" class="danger">Удалить</button>
+                <button id="cancel-delete">Отмена</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const deleteModal = document.getElementById('delete-modal');
+    const confirmDelete = document.getElementById('confirm-delete');
+    const cancelDelete = document.getElementById('cancel-delete');
+    const postId = {{ post.id }};
+    
+    document.querySelector('.delete-btn')?.addEventListener('click', () => {
+        deleteModal.classList.add('active');
+    });
+    
+    confirmDelete?.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`/api/v1/post/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                alert('Ошибка при удалении');
+                deleteModal.classList.remove('active');
+            }
+        } catch (error) {
+            alert('Произошла ошибка');
+            deleteModal.classList.remove('active');
+        }
+    });
+    
+    cancelDelete?.addEventListener('click', () => {
+        deleteModal.classList.remove('active');
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+            deleteModal.classList.remove('active');
+        }
+    });
+
+    document.querySelector('.like-btn')?.addEventListener('click', async (e) => {
+        try {
+            const response = await fetch(`/api/v1/like/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                document.querySelector('.likes-count').textContent = data.likes;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+</script>
+{% endblock %}
